@@ -13,16 +13,33 @@ def basic_login():
     print(response.status_code)
     print(response.json())
 
-def get_application_id():
-    endpoint = "api/v1/application-tokens"
-    bearer_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjk2MDg4NDQ3LCJqdGkiOiIxN2IwNDZhOGJmYTc0ZmQ2ODNkZGFlOTg2ZjgwMzNiNiIsInVzZXJfaWQiOjU5MzAyNn0.EUYGlLvSTifVyfjJlAZqq81i7-sKB9jHQ-c1NSPJ5H7OuWrDie1teD-H0aiLAxywlXZ1aeyADWRHXJVkH68w6sLy_dFtG9W-CMJsDznRmaDEFGF_fv9JfCxk81ABFYcaFijKrsKY-kkZOATO01BuXAGnkuZnllLzyMB98amr7Htjyihk34l5xSCiFHNnHUoZAblolrdvTPO0c93cbvCwM1XyV0er2OCZrecajjbterGl9vLko_oHC8nGYBtPoDFNfb1SthgK-2O1kZiWYa3rIM23Oej0MiS8usLBVTCDxXuIu99L0eJEVYtEEZrbe35KWqnzqWVHqdsv2_A-OmSGrQ"
-    headers = {
-    'Authorization': f'Bearer {bearer_token}',
-    "Content-Type": "application/json"
+def get_github_access_token(github_key):
+    github_url = "https://github.com/login/oauth/access_token"
+    github_data = {
+        "client_id": "fd08333e8ef6751bf03c",
+        "client_secret":"b45652af2b0ae6c750da8d3e8a177a93814d8a2e", 
+        "code": github_key
     }
-    response = requests.get(url=domain+endpoint, headers=headers)
+    headers = {
+    "Accept": "application/json"
+    }
+    github_resp = requests.post(url=github_url, data=github_data, headers=headers)
+    print(github_resp.status_code)
+    print(github_resp)
+    print(github_resp.json())
+
+
+def github_login(github_token):
+    endpoint = "api/v1/auth"
+    data = {
+        "type": "github",
+        "code": github_token
+    }
+    
+    response = requests.post(url=domain+endpoint, data=data)
     print(response.status_code)
     print(response.json())
+
 
 def get_for_refresh():
     endpoint = "api/v1/auth/refresh"
@@ -38,4 +55,5 @@ def get_for_refresh():
     print(response.json())
 
 if __name__=="__main__":
-    get_for_refresh()
+    github_login("e9b9a66c973f06507c54")
+    #get_github_access_token("1ce98809d2dc76f50ddc")
