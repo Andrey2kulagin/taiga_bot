@@ -16,8 +16,8 @@ def basic_login():
 def get_github_access_token(github_key):
     github_url = "https://github.com/login/oauth/access_token"
     github_data = {
-        "client_id": "fd08333e8ef6751bf03c",
-        "client_secret":"b45652af2b0ae6c750da8d3e8a177a93814d8a2e", 
+        "client_id": "",
+        "client_secret":"", 
         "code": github_key
     }
     headers = {
@@ -43,7 +43,7 @@ def github_login(github_token):
 
 def get_for_refresh():
     endpoint = "api/v1/auth/refresh"
-    refresh = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY5NjM1MDI1MywianRpIjoiOWRlY2RkMmFmYmFkNDUzMTk5MTJlNjViOWQ5YzNkMzgiLCJ1c2VyX2lkIjo1OTMwMjZ9.ecdVkYI80ShhomatuBTJnSHEeN2zeB0TN_312rHbj-RarUVJkA7wj6IYa6OvWFWcSCXkgHXYqzz8BbGcaLf_-QylAxh5ZoyH38BGUMTu-iJBpp4hZVOxIvw0GvspwK2BWIERHCgyW5GmQiXXeR9p5LygqE1YvTV-CRVGyw-6UkREImpCy0pltjl6sL79Fwg8AiDu57d3WL8cqpD7wZ6j_hAuyXMDlI_xaJmB3pZ5uhJJXFaVa8M2mt4C4TRhR0-Nd4IWqzGFUtaATxPlV003lyBYoGw2waXesRrQDug5Mkirzs66WoijkScaEFAbW2a7jjvgRIrvqtk-8QIeRVKUhw"
+    refresh = ""
     data = {
         "refresh": refresh
     }
@@ -55,5 +55,5 @@ def get_for_refresh():
     print(response.json())
 
 if __name__=="__main__":
-    github_login("e9b9a66c973f06507c54")
-    #get_github_access_token("1ce98809d2dc76f50ddc")
+    github_login("")
+    #get_github_access_token("")
