@@ -7,7 +7,7 @@ def basic_login():
     data = {
         "password": "",
         "type": "normal",
-        "username": "andrey2kulagin@yandex.ru"
+        "username": ""
     }
     response = requests.post(url=domain+endpoint, data=data)
     print(response.status_code)
