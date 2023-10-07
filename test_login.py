@@ -1,59 +1,115 @@
 import requests
 
-domain = "https://api.taiga.io/"
 
-def basic_login():
+def get_auth_refresh_via_username(domain: str, username: str, password: str) -> tuple[int, str]:
     endpoint = "api/v1/auth"
     data = {
-        "password": "",
         "type": "normal",
-        "username": ""
+        "username": username,
+        "password": password
     }
     response = requests.post(url=domain+endpoint, data=data)
-    print(response.status_code)
-    print(response.json())
+    status_code = response.status_code
+    response_data = response.json()
+    auth_token = response_data.get("auth_token")
+    refresh = response_data.get("refresh")
+    return status_code, auth_token, refresh
 
-def get_github_access_token(github_key):
-    github_url = "https://github.com/login/oauth/access_token"
-    github_data = {
-        "client_id": "",
-        "client_secret":"", 
-        "code": github_key
+
+
+
+def application_token_validate(application_id, auth_token, application_auth_token):
+    endpoint = f"api/v1/application-tokens/validate"
+    refresh = ""
+    data = {
+        "application": application_id,
+        "auth_code": application_auth_token,
+        "state": "state"
     }
     headers = {
-    "Accept": "application/json"
-    }
-    github_resp = requests.post(url=github_url, data=github_data, headers=headers)
-    print(github_resp.status_code)
-    print(github_resp)
-    print(github_resp.json())
 
-
-def github_login(github_token):
-    endpoint = "api/v1/auth"
-    data = {
-        "type": "github",
-        "code": github_token
+        "Authorization": f"Bearer {auth_token}"
     }
-    
-    response = requests.post(url=domain+endpoint, data=data)
+    response = requests.post(url=domain+endpoint, data=data, headers=headers)
     print(response.status_code)
     print(response.json())
 
 
-def get_for_refresh():
-    endpoint = "api/v1/auth/refresh"
+def list_projects(auth_token):
+    endpoint = f"api/v1/projects"
     refresh = ""
     data = {
         "refresh": refresh
     }
     headers = {
-    "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": f"Application {auth_token}"
     }
-    response = requests.post(url=domain+endpoint,data=data)
+    response = requests.get(url=domain+endpoint, headers=headers)
     print(response.status_code)
     print(response.json())
 
-if __name__=="__main__":
-    github_login("")
-    #get_github_access_token("")
+
+def get_application_auth_code(application_id, auth_token, domain):
+    get_endpoint = f"api/v1/applications/{application_id}/token"
+    headers = {
+        "Authorization": f"Bearer {auth_token}"
+    }
+    get_response = requests.get(url=domain+get_endpoint, headers=headers)
+    status_code = get_response.status_code
+    if status_code != 200:
+        return 500, ""
+    auth_code = get_response.json().get("auth_code")
+    if auth_code is None:
+        print("TUT")
+        #генерируем новый
+        token_gen_endpoint = f"api/v1/application-tokens/authorize"
+        data = {
+            "application": application_id,
+        }
+        response = requests.post(url=domain+token_gen_endpoint, data=data, headers=headers)
+        status_code = response.status_code
+        if status_code != 200:
+            return 500, ""
+        auth_code = response.json().get("auth_code")
+    return 200, auth_code
+
+
+def get_application_token(application_id, auth_token, domain):
+    # здесь устанавливается токен для пользователя приложения. Его надо потом ещё активировать
+    status, application_auth_code = get_application_auth_code(application_id, auth_token, domain)
+    if status != 200:
+        return 500, ""
+    endpoint = f"api/v1/application-tokens/validate"
+    refresh = ""
+    data = {
+        "application": application_id,
+        "auth_code": application_auth_code,
+    }
+    headers = {
+
+        "Authorization": f"Bearer {auth_token}"
+    }
+    response = requests.post(url=domain+endpoint, data=data, headers=headers)
+    if response.status_code == 200:
+        return 200, response.json().get("token")
+    return 500, ""
+    
+
+    
+
+def get_application_ver_token(username: str, password: str, application_id: str, domain: str) -> str:
+    # получаем auth_token
+    status_code, auth_token, refresh = get_auth_refresh_via_username(
+        domain, username, password)
+    if status_code == 200:
+        # получаем токен и верифицируем токе
+        return get_application_token(application_id, auth_token, domain)
+    else:
+        return 401, "Неправильные логин или пароль или такого пользователя не существует"
+    pass
+
+
+if __name__ == "__main__":
+    domain = "http://127.0.0.1:9000/"
+    pass
