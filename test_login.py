@@ -18,34 +18,19 @@ def get_auth_refresh_via_username(domain: str, username: str, password: str) -> 
 
 
 
-def application_token_validate(application_id, auth_token, application_auth_token):
-    endpoint = f"api/v1/application-tokens/validate"
-    refresh = ""
-    data = {
-        "application": application_id,
-        "auth_code": application_auth_token,
-        "state": "state"
-    }
-    headers = {
-
-        "Authorization": f"Bearer {auth_token}"
-    }
-    response = requests.post(url=domain+endpoint, data=data, headers=headers)
-    print(response.status_code)
-    print(response.json())
-
-
 def list_projects(auth_token):
+    print("auth_token", auth_token)
     endpoint = f"api/v1/projects"
     refresh = ""
     data = {
-        "refresh": refresh
+        "description": "Beta description",
+        "name": "Beta project"
     }
     headers = {
-        "Content-Type": "application/json",
         "Authorization": f"Application {auth_token}"
+        
     }
-    response = requests.get(url=domain+endpoint, headers=headers)
+    response = requests.post(url=domain+endpoint, headers=headers, data=data)
     print(response.status_code)
     print(response.json())
 
@@ -57,6 +42,7 @@ def get_application_auth_code(application_id, auth_token, domain):
     }
     get_response = requests.get(url=domain+get_endpoint, headers=headers)
     status_code = get_response.status_code
+    print("our_status = ", status_code)
     if status_code != 200:
         return 500, ""
     auth_code = get_response.json().get("auth_code")
@@ -81,7 +67,6 @@ def get_application_token(application_id, auth_token, domain):
     if status != 200:
         return 500, ""
     endpoint = f"api/v1/application-tokens/validate"
-    refresh = ""
     data = {
         "application": application_id,
         "auth_code": application_auth_code,
@@ -107,9 +92,11 @@ def get_application_ver_token(username: str, password: str, application_id: str,
         return get_application_token(application_id, auth_token, domain)
     else:
         return 401, "Неправильные логин или пароль или такого пользователя не существует"
-    pass
+    
 
 
 if __name__ == "__main__":
     domain = "http://127.0.0.1:9000/"
-    pass
+    status, token = get_application_ver_token("admin", "12345", "76212bb2-5378-4839-bb85-1b26ec408dfa", "http://127.0.0.1:9000/")
+
+    list_projects("eyJhcHBfdG9rZW5faWQiOjR9:1qpoCG:ue-62-rvrOwkfl4TEIg41f8WybDSiGG4iA_wEVqXo94")

@@ -8,3 +8,6 @@ class BotUser(models.Model):
     auth_type = models.CharField(max_length=12, choices=choices)
     application_token = models.CharField(null=True, max_length=50)
     refresh_token = models.CharField(null=True, max_length=50)
+
+    def __str__(self):
+        return f"{self.domain} {self.tg_id} {self.auth_type}"
