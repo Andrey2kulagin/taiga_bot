@@ -1,5 +1,7 @@
 import requests
 from ..models import BotUser
+
+
 def domain_validate_and_normalize(old_domain:str) -> tuple[bool,str]:
     if old_domain.find("http://") == -1 and old_domain.find("https://") == -1:
         return False, "Домен должен включать http:// или https:// и иметь вид https://api.taiga.io/"
