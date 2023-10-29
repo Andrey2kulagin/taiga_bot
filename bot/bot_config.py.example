@@ -5,6 +5,7 @@
 # Токен используется вместо номера телефона, потому что бот - не пользователь
 # Однажды сгенерировав ключи для приложения их НЕЛЬЗЯ ОТОЗВАТЬ.
 # Если ключи скомпрометированы, то придется УДАЛЯТЬ АККАУНТ, чтобы от них избавиться
-api_id = 12345678
-api_hash = "jfiokjfeoewjvno1qnvg4049032t5594"
-bot_token = "1234567890:JIojJIOjoNOJNoHUIhEUEJfioejofeJEOee"
+API_ID = 12345678
+API_HASH = "jfiokjfeoewjvno1qnvg4049032t5594"
+BOT_TOKEN = "1234567890:JIojJIOjoNOJNoHUIhEUEJfioejofeJEOee"
+BOT_USERNAME = "@username"
