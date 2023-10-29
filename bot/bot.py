@@ -4,7 +4,7 @@ import re
 from bot_config import API_ID, API_HASH, BOT_TOKEN
 from pyrogram.types import (ReplyKeyboardMarkup, InlineKeyboardMarkup,
                             InlineKeyboardButton,ReplyKeyboardRemove, CallbackQuery)
-from db_worker import is_botuser_logged_in
+from db_worker import BotUserSettings, LoginBotUser
 
 # Если работать не будет, то убрать асинк нафиг
 # словарь для хранения состояний пользователей
@@ -30,10 +30,10 @@ app = Client(
 @app.on_message(filters.command("start"))
 async def start(client, message):
     # устанавливаем начальное состояние пользователя
-    user_states[message.chat.id] = "main_menu"
+    await BotUserSettings.write_botuser_state(message.chat.id, "main_menu")
     # TODO: убрать дубликаты
-    if await is_botuser_logged_in(message.chat.id):
-        user_states[message.chat.id] = "logged_in"
+    if await LoginBotUser.is_botuser_logged_in(message.chat.id):
+        await BotUserSettings.write_botuser_state(message.chat.id, "logged_in")
         await message.reply(
             "This is Taiga integration bot.\n"
             "It can notify you about events in your projects.\n"
@@ -62,16 +62,16 @@ async def start(client, message):
 # Если пришло сообщение от пользователя и его сотояние - главное меню
 @app.on_message(filters.text)
 async def menu_handler(client, message):
-    state = user_states.get(message.chat.id)
+    state = await BotUserSettings.read_botuser_state(message.chat.id)
     if message.text == "/login":
-        if await is_botuser_logged_in(message.chat.id):
-            user_states[message.chat.id] = "logged_in"
+        if await LoginBotUser.is_botuser_logged_in(message.chat.id):
+            await BotUserSettings.write_botuser_state(message.chat.id, "logged_in")
             await message.reply(
                 "You already logged in",
                 reply_markup=ReplyKeyboardRemove()
             )
         else:
-            user_states[message.chat.id] = "choosing_instance"
+            await BotUserSettings.write_botuser_state(message.chat.id, "choosing_instance")
             await message.reply(
                 "Choose your Taiga instance",
                 reply_markup=ReplyKeyboardMarkup(
@@ -85,14 +85,14 @@ async def menu_handler(client, message):
 
     if state == "choosing_instance":
         if message.text == "Custom instance":
-            user_states[message.chat.id] = "setting_custom_instance_url"
+            await BotUserSettings.write_botuser_state(message.chat.id, "setting_custom_instance_url")
             await message.reply(
                 "Write your taiga instance URL in `https://api.example.com` format:"
             )
         # TODO: перезапустить бота после того как отдал ссылки
         if message.text == "taiga.io (default)":
             taiga_instances_urls[message.chat.id] = "https://api.taiga.io"
-            user_states[message.chat.id] = "authorizing"
+            await BotUserSettings.write_botuser_state(message.chat.id, "authorizing")
 
             # http://127.0.0.1:8000/login/standard?domain=домен&tg_id=1257343
             url = {
@@ -122,7 +122,7 @@ async def menu_handler(client, message):
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         if re.match(url_regex, msg):
             taiga_instances_urls[message.chat.id] = msg
-            user_states[message.chat.id] = "authorizing"
+            await BotUserSettings.write_botuser_state(message.chat.id, "authorizing")
             # http://127.0.0.1:8000/login/standard?domain=домен&tg_id=1257343
             url = {
                 "domain": str(taiga_instances_urls.get(message.chat.id)),

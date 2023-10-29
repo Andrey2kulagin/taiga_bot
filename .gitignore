@@ -164,3 +164,4 @@ cython_debug/
 
 .idea/taiga_bot.iml
 .idea/taiga_bot.iml
+bot/taigatestbot.session-journal
