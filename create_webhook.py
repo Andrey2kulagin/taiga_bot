@@ -1,8 +1,8 @@
 import requests
 
 
-def create_webhook(auth_token: str, key: str, name: str, project_id: int, url_webhook: str) -> dict:
-    url_t = "https://api.taiga.io/api/v1/webhooks"
+def create_webhook(auth_token: str, key: str, name: str, project_id: int, url_webhook: str, user_tg_id: str) -> dict:
+    url_t = f"https://api.taiga.io/api/v1/issue_webhook/{user_tg_id}/{project_id}"
 
     headers = {
         "Content-Type": "application/json",
