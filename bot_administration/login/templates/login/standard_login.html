@@ -1,0 +1,23 @@
+
+
+    {% extends 'login/base_login.html' %}
+
+    {% block login_form %}
+    <p style="color: red;">{{error_message}}</p>
+    
+
+
+    <!----><form ng-if="defaultLoginEnabled" class="login-form ng-pristine ng-valid" method="post">
+      {% csrf_token %}
+        <fieldset>
+          {{form.username}}
+          </fieldset>
+          <fieldset class="login-password">
+            {{form.password}}
+            <tg-capslock><!----></tg-capslock>
+          </fieldset>
+          <fieldset class="end">
+            <button variant="primary" type="submit" title="Login" translate="LOGIN_COMMON.ACTION_SIGN_IN" class="btn-small full">Login</button>
+          </fieldset>
+        </form><!---->
+    {% endblock %}

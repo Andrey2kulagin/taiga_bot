@@ -1,39 +1,6 @@
 import requests
-
-
-def get_auth_refresh_via_username(domain: str, username: str, password: str) -> tuple[int, str]:
-    endpoint = "api/v1/auth"
-    data = {
-        "type": "normal",
-        "username": username,
-        "password": password
-    }
-    response = requests.post(url=domain+endpoint, data=data)
-    status_code = response.status_code
-    response_data = response.json()
-    auth_token = response_data.get("auth_token")
-    refresh = response_data.get("refresh")
-    return status_code, auth_token, refresh
-
-
-
-
-def list_projects(auth_token):
-    print("auth_token", auth_token)
-    endpoint = f"api/v1/projects"
-    refresh = ""
-    data = {
-        "description": "Beta description",
-        "name": "Beta project"
-    }
-    headers = {
-        "Authorization": f"Application {auth_token}"
-        
-    }
-    response = requests.post(url=domain+endpoint, headers=headers, data=data)
-    print(response.status_code)
-    print(response.json())
-
+from .all_service import get_auth_refresh_via_username, create_tg_user
+from django.http import Http404
 
 def get_application_auth_code(application_id, auth_token, domain):
     get_endpoint = f"api/v1/applications/{application_id}/token"
@@ -42,12 +9,12 @@ def get_application_auth_code(application_id, auth_token, domain):
     }
     get_response = requests.get(url=domain+get_endpoint, headers=headers)
     status_code = get_response.status_code
-    print("our_status = ", status_code)
     if status_code != 200:
-        return 500, ""
+        if status_code == 404:
+            raise Http404("Неверный id приложения")
+        return status_code, "" # может быть 404
     auth_code = get_response.json().get("auth_code")
     if auth_code is None:
-        print("TUT")
         #генерируем новый
         token_gen_endpoint = f"api/v1/application-tokens/authorize"
         data = {
@@ -56,7 +23,7 @@ def get_application_auth_code(application_id, auth_token, domain):
         response = requests.post(url=domain+token_gen_endpoint, data=data, headers=headers)
         status_code = response.status_code
         if status_code != 200:
-            return 500, ""
+            return status_code, ""
         auth_code = response.json().get("auth_code")
     return 200, auth_code
 
@@ -65,7 +32,7 @@ def get_application_token(application_id, auth_token, domain):
     # здесь устанавливается токен для пользователя приложения. Его надо потом ещё активировать
     status, application_auth_code = get_application_auth_code(application_id, auth_token, domain)
     if status != 200:
-        return 500, ""
+        return status, ""
     endpoint = f"api/v1/application-tokens/validate"
     data = {
         "application": application_id,
@@ -78,7 +45,7 @@ def get_application_token(application_id, auth_token, domain):
     response = requests.post(url=domain+endpoint, data=data, headers=headers)
     if response.status_code == 200:
         return 200, response.json().get("token")
-    return 500, ""
+    return response.status_code, ""
     
 
     
@@ -92,11 +59,14 @@ def get_application_ver_token(username: str, password: str, application_id: str,
         return get_application_token(application_id, auth_token, domain)
     else:
         return 401, "Неправильные логин или пароль или такого пользователя не существует"
-    
 
 
-if __name__ == "__main__":
-    domain = "http://127.0.0.1:9000/"
-    status, token = get_application_ver_token("admin", "12345", "76212bb2-5378-4839-bb85-1b26ec408dfa", "http://127.0.0.1:9000/")
-
-    list_projects("eyJhcHBfdG9rZW5faWQiOjR9:1qpoCG:ue-62-rvrOwkfl4TEIg41f8WybDSiGG4iA_wEVqXo94")
+def application_login_handler(username, password, application_id, domain, tg_id):
+    try:
+        status, token = get_application_ver_token(username, password, application_id, domain)
+        if status == 200:
+            create_tg_user(tg_id=tg_id, domain=domain,auth_type="Application",application_token=token)
+            return status, ""
+        return status, token
+    except Http404:
+        return 404, "Приложения с таким id нет"
