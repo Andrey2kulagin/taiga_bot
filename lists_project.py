@@ -12,6 +12,6 @@ def list_project(auth_token, member_id):
     if response.status_code == 200:
         data = response.json()
         projects_info = [{"id": project["id"], "name": project["name"]} for project in data]
-        return projects_info
+        return response.status_code, projects_info
     else:
-        return f"Ошибка: {response.status_code}"
+        return response.status_code, f"Ошибка: {response.status_code}"

@@ -5,11 +5,11 @@ from bot_config import API_ID, API_HASH, BOT_TOKEN
 from pyrogram.types import (ReplyKeyboardMarkup, InlineKeyboardMarkup,
                             InlineKeyboardButton,ReplyKeyboardRemove, CallbackQuery)
 from db_worker import BotUserSettings, LoginBotUser
+from lists_project import list_project
+from token_parse import parse_user_id
+from refresh_token import refresh_access_token_by_tg_id
 
-# Если работать не будет, то убрать асинк нафиг
-# словарь для хранения состояний пользователей
-user_states = {}
-
+# TODO: использовать бд вместо этого
 # url инстанса тайги для каждого пользователя
 taiga_instances_urls = {}
 
@@ -28,33 +28,71 @@ app = Client(
 # Если пользователь начал диалог с ботом используя команду "/start",
 # То вывести ему список команд
 @app.on_message(filters.command("start"))
-async def start(client, message):
+async def start_command_handler(client, message):
     # устанавливаем начальное состояние пользователя
     await BotUserSettings.write_botuser_state(message.chat.id, "main_menu")
-    # TODO: убрать дубликаты
+    # если пользователь авторизован в тайге
     if await LoginBotUser.is_botuser_logged_in(message.chat.id):
+        # устанавливаем состояние logged_in (зачем??)
         await BotUserSettings.write_botuser_state(message.chat.id, "logged_in")
-        await message.reply(
-            "This is Taiga integration bot.\n"
-            "It can notify you about events in your projects.\n"
-            "You can also use it to create an issue."
-        )
-        await message.reply(
-            "You already logged in",
-            reply_markup=ReplyKeyboardRemove()
-        )
+        # Рисуем клавиатуру авторизованного пользователя с кнопками списка, isuues и выхода из аккаунта
+        # TODO: выводить эту клавиатуру после того как отдали пользователю ссылки на авторизацию
+        keyboard = [
+            ["/projects", "/issues", "/logout"]
+        ]
+    # иначе, если авторизация не произведена, то клавиатура с одной командой - для входа
     else:
         keyboard = [
-            ["/login", "/etc"]
+            ["/login"]
+        ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
+    await message.reply(
+        "This is Taiga integration bot.\n"
+        "It can notify you about events in your projects.\n"
+        "You can also use it to create an issue.",
+        reply_markup=reply_markup
+    )
+
+
+# TODO: убрать к чертям собачим, когда будет готово автоматическое обновление токенов
+@app.on_message(filters.command("refresh_token"))
+async def refresh_token_command_handler(client, message):
+    result = await refresh_access_token_by_tg_id(message.chat.id)
+    if result == 200:
+        await message.reply("Token has been successfully refreshed")
+    else:
+        await message.reply("Refresh token is rotten or something else went wrong.\n"
+                      "Try to log in again")
+
+
+# Если пришло сообщение от пользователя с командой для вывода списка
+@app.on_message(filters.command("projects"))
+async def projects_command_handler(client, message):
+    # если пользователь залогинен, то работаем
+    if await LoginBotUser.is_botuser_logged_in(message.chat.id):
+        token = await LoginBotUser.get_auth_token(message.chat.id)
+        # этот скрипт возможно поменяет свое местоположение в какую-нибудь папку utils
+        projects = list_project(token, await parse_user_id(token))
+        if projects[0] == 200:
+            msg = ''
+            for i in range(len(projects[1])):
+                msg += "**" + str(i+1) + ".** " + projects[1][i]["name"] + "\n"
+            await message.reply(
+                msg
+            )
+        else:
+            await message.reply(
+                projects[1]
+            )
+    # иначе облом
+    else:
+        # TODO: вынести в отдельную функцию, судя по всему это будет использоваться хуеву тучу раз
+        keyboard = [
+            ["/login"]
         ]
         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
-
-        # TODO: проверить на существующую интеграцию в боте. Если авторизован, то показать кнопку выхода вместо кнопки
-        #  входа
         await message.reply(
-            "This is Taiga integration bot.\n"
-            "It can notify you about events in your projects.\n"
-            "You can also use it to create an issue.",
+            "You have to be logged in",
             reply_markup=reply_markup
         )
 
@@ -140,6 +178,9 @@ async def menu_handler(client, message):
         # elif (msg == "taiga.io") or (msg == "https://taiga.io") or (msg == "https://api.taiga.io")
         else:
             await message.reply("Invalid url, try again using right format (`https://api.example.com`)")
+
+
+
 
 
 # Automatically start() and idle()
